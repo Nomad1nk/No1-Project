@@ -24,6 +24,9 @@ def play_audio(sock, target_ip, target_port, session, filename):
             width = wf.getsampwidth()
             channels = wf.getnchannels()
             
+            duration = len(content) / width / channels / rate
+            print(f"[*] 🔊 Audio Info: {len(content)} bytes, {duration:.2f} sec, {rate}Hz")
+
             if rate != 8000: 
                 content, _ = audioop.ratecv(content, width, channels, rate, 8000, None)
             if channels == 2: 

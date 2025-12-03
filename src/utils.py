@@ -1,7 +1,13 @@
 import re
 
 def clean_text_for_tts(text):
-    # 1. Тусгай тэмдэгтүүдийг Монгол үгээр солих
+    # 1. Markdown тэмдэглэгээг устгах (bold, italic, headers)
+    # **bold** -> bold, *italic* -> italic
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text) # Bold
+    text = re.sub(r'\*(.*?)\*', r'\1', text)     # Italic
+    text = text.replace("#", "")
+    
+    # 2. Тусгай тэмдэгтүүдийг Монгол үгээр солих
     text = text.replace("%", " хувь")
     text = text.replace("$", " доллар")
     text = text.replace("₮", " төгрөг")
@@ -9,13 +15,8 @@ def clean_text_for_tts(text):
     text = text.replace("+", " нэмэх")
     text = text.replace("=", " тэнцүү")
     text = text.replace("/", " хуваах")
-    text = text.replace("*", " үржих")
+    # text = text.replace("*", " үржих") # Markdown цэвэрлэсний дараа * үлдвэл тэр нь үржих тэмдэг байх магадлалтай
     text = text.replace("@", " эт")
-    
-    # 2. Markdown тэмдэглэгээг устгах (bold, italic, headers)
-    text = text.replace("*", "")
-    text = text.replace("_", "")
-    text = text.replace("#", "")
     
     # 3. Хаалтан доторх агуулгыг устгах
     text = re.sub(r'\([^)]*\)', '', text)

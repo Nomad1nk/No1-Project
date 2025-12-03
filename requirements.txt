@@ -1,0 +1,9 @@
+requests
+openai
+python-dotenv
+fastapi
+uvicorn
+python-multipart
+aiofiles
+webrtcvad
+webrtcvad

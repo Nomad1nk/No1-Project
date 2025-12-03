@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  bedel-ai:
+    build: .
+    container_name: bedel_ai_box
+    restart: unless-stopped
+    # network_mode: "host" # Not supported on Windows
+    ports:
+      - "5060:5060/udp"
+      - "10000:10000/udp"
+    mac_address: "02:42:AC:11:00:02" # Static MAC for License
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - ./data:/app/data
+
+  dashboard:
+    build: .
+    container_name: bedel_dashboard
+    restart: unless-stopped
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    env_file:
+      - .env

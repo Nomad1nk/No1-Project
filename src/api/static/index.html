@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="mn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bedel AI Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body class="bg-gray-100 font-sans" x-data="app()">
+
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">🤖 Bedel AI Box</h1>
+            <div class="space-x-4">
+                <button @click="tab = 'dashboard'" :class="{'font-bold underline': tab === 'dashboard'}">Хяналт</button>
+                <button @click="tab = 'products'" :class="{'font-bold underline': tab === 'products'}">Бараа</button>
+                <button @click="tab = 'settings'" :class="{'font-bold underline': tab === 'settings'}">Тохиргоо</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <div class="container mx-auto p-6">
+
+        <!-- Dashboard / Logs -->
+        <div x-show="tab === 'dashboard'">
+            <h2 class="text-xl font-bold mb-4">📞 Сүүлийн дуудлагууд</h2>
+            <div
+                class="bg-white rounded-lg shadow p-4 h-96 overflow-y-auto font-mono text-sm bg-gray-900 text-green-400">
+                <template x-for="log in logs">
+                    <div class="mb-1" x-text="log"></div>
+                </template>
+            </div>
+            <button @click="fetchLogs"
+                class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Шинэчлэх</button>
+        </div>
+
+        <!-- Products -->
+        <div x-show="tab === 'products'">
+            <h2 class="text-xl font-bold mb-4">📦 Барааны жагсаалт</h2>
+
+            <!-- Add Product Form -->
+            <div class="bg-white p-4 rounded shadow mb-6 flex gap-2 items-end">
+                <div>
+                    <label class="block text-sm text-gray-600">Нэр</label>
+                    <input x-model="newProduct.name" type="text" class="border p-2 rounded w-40">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600">Үнэ</label>
+                    <input x-model="newProduct.price" type="number" class="border p-2 rounded w-32">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600">Тайлбар</label>
+                    <input x-model="newProduct.description" type="text" class="border p-2 rounded w-64">
+                </div>
+                <button @click="addProduct"
+                    class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Нэмэх</button>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white rounded shadow overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="p-3 text-left">Нэр</th>
+                            <th class="p-3 text-left">Үнэ</th>
+                            <th class="p-3 text-left">Тайлбар</th>
+                            <th class="p-3 text-left">Үйлдэл</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="p in products">
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-3" x-text="p.name"></td>
+                                <td class="p-3" x-text="p.price + '₮'"></td>
+                                <td class="p-3" x-text="p.description"></td>
+                                <td class="p-3">
+                                    <button @click="deleteProduct(p.name)"
+                                        class="text-red-500 hover:text-red-700">Устгах</button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Settings / Prompt -->
+        <div x-show="tab === 'settings'">
+            <h2 class="text-xl font-bold mb-4">🧠 AI Тархины тохиргоо (Prompt)</h2>
+            <p class="text-gray-600 mb-2">Энд AI-ийн зан авир, дүрмийг тохируулна.</p>
+            <textarea x-model="prompt" class="w-full h-96 p-4 border rounded font-mono text-sm"
+                spellcheck="false"></textarea>
+            <div class="mt-4 flex justify-end">
+                <button @click="savePrompt"
+                    class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Хадгалах</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function app() {
+            return {
+                tab: 'dashboard',
+                logs: [],
+                products: [],
+                prompt: '',
+                newProduct: { name: '', price: '', description: '' },
+
+                init() {
+                    this.fetchLogs();
+                    this.fetchProducts();
+                    this.fetchPrompt();
+                    setInterval(() => { if (this.tab === 'dashboard') this.fetchLogs() }, 5000);
+                },
+
+                async fetchLogs() {
+                    const res = await fetch('/logs');
+                    const data = await res.json();
+                    this.logs = data.logs.reverse();
+                },
+
+                async fetchProducts() {
+                    const res = await fetch('/products');
+                    this.products = await res.json();
+                },
+
+                async addProduct() {
+                    if (!this.newProduct.name) return;
+                    await fetch('/products', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.newProduct)
+                    });
+                    this.newProduct = { name: '', price: '', description: '' };
+                    this.fetchProducts();
+                },
+
+                async deleteProduct(name) {
+                    if (!confirm('Устгах уу?')) return;
+                    await fetch(`/products/${name}`, { method: 'DELETE' });
+                    this.fetchProducts();
+                },
+
+                async fetchPrompt() {
+                    const res = await fetch('/prompt');
+                    const data = await res.json();
+                    this.prompt = data.content;
+                },
+
+                async savePrompt() {
+                    await fetch('/prompt', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: this.prompt })
+                    });
+                    alert('Хадгаллаа! Дараагийн дуудлагаас идэвхжинэ.');
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
